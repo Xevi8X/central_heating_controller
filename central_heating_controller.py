@@ -31,6 +31,7 @@ class CentralHeatingController:
             command["state"] = "ON"
         else:
             command["state"] = "OFF"
+        command["countdown"] = 300
         payload = json.dumps(command).encode('utf-8')
         self.mqtt_client.publish(topic, payload) 
 
