@@ -7,7 +7,7 @@ from central_heating import CentralHeating, RadiatorSubscriberMqtt
 
 class CentralHeatingController:
     def __init__(self, broker_address, switch_name):
-        self.PUBLISH_INTERVAL = 3
+        self.PUBLISH_INTERVAL = 60
         self.mqtt_client = MQTTClient(broker_address)
         self.switch_name = switch_name
         self.central_heating = CentralHeating()
