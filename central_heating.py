@@ -76,7 +76,7 @@ class CentralHeating:
             for _, radiator in self.radiators.items():
                 print("    ", end="")
                 print(radiator)
-            print(f"Heat demand: {"on" if self.heat_demand else "off"}")
+            print(f"Heat demand: {'on' if self.heat_demand else 'off'}")
             print()
 
 

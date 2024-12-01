@@ -7,6 +7,7 @@ class MQTTClient:
     def __init__(self, broker_address, broker_port=1883, username = "mqtt", password = None):
         client_id = f'python-mqtt-{random.randint(0, 1000)}'
         print (f"Client ID: {client_id}")
+        print (f"Address: {broker_address}:{broker_port}")
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id)
         self.broker_address = broker_address
         self.broker_port = broker_port
