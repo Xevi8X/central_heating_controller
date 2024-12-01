@@ -32,7 +32,7 @@ class Radiator:
         name_str = f"{self.name[:25]:<25}" if len(self.name) > 25 else f"{self.name:<25}"
         temperature_str = f"{self.temperature:.1f}°C"
         setpoint_str = f"{self.setpoint:.1f}°C"
-        position_str = f"{self.position}%"
+        position_str = f"{self.position:3d}%"
         return f"Name: {name_str}, Temperature: {temperature_str}, Setpoint: {setpoint_str}, Position: {position_str} at {self.last_updated}"
 
 
