@@ -10,4 +10,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "main.py", "192.168.0.50", "sw_piec"]
+CMD ["python", "main.py", "mqtt", "sw_piec"]
