@@ -1,5 +1,6 @@
 import random
 import sys
+import threading
 import paho.mqtt.client as mqtt
 
 
@@ -13,6 +14,7 @@ class MQTTClient:
         self.broker_port = broker_port
         self.connected = False
         self.subscribers = []
+        self.mutex = threading.RLock()
 
         if username:
             if password:
@@ -54,7 +56,8 @@ class MQTTClient:
         if not self.connected:
             return
         print(f"Publishing: {topic}, {payload}")
-        self.client.publish(topic, payload)
+        with self.mutex:
+            self.client.publish(topic, payload)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

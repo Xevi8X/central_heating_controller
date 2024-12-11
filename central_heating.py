@@ -79,6 +79,9 @@ class CentralHeating:
             print(f"Heat demand: {'on' if self.heat_demand else 'off'}")
             print()
 
+    def get_dev_to_refresh(self):
+        with self.mutex:
+            return list(self.radiators.keys())
 
 class RadiatorSubscriberMqtt:
     def __init__(self, central_heating: CentralHeating):
