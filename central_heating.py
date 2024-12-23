@@ -2,6 +2,7 @@ import datetime
 import json
 import threading
 from typing import Optional
+from config import ConfigLoader, RadiatorConfig
 
 
 class Radiator:
@@ -19,13 +20,10 @@ class Radiator:
         setpoint = status['current_heating_setpoint']
         if 'position' in status:
             position = status['position']
-        elif 'running_state' in status:
-            if status['running_state'] == 'heat':
-                position = 100
-            else:
-                position = 0
         else:
-            position = -1
+            error = setpoint - temperature
+            position = 100 * error / ConfigLoader._config.temperature_constant
+            position = int(min(100, max(0, position)))
         return Radiator(name, temperature, setpoint, position)
     
     def __str__(self):
@@ -47,6 +45,9 @@ class CentralHeating:
 
     def update_radiator(self, radiator: Radiator):
         with self.mutex:
+            if not radiator.name in ConfigLoader._config.radiators:
+                ConfigLoader._config.radiators[radiator.name] = RadiatorConfig()
+                ConfigLoader.save()
             self.radiators[radiator.name] = radiator
 
     def delete_stale_radiators(self):
@@ -57,10 +58,15 @@ class CentralHeating:
     def update_heat_demand(self):
         with self.mutex:
             self.heat_demand = False
-            for _, radiator in self.radiators.items():
-                if radiator.position > self.MINIMAL_POSITION:
-                    self.heat_demand = True
-                    return
+            self.total_power = 0
+            config = ConfigLoader._config
+            if not config.radiators:
+                return
+            for name, radiator in self.radiators.items():              
+                if not name in config.radiators or not config.radiators[name].included:
+                    continue
+                self.total_power += config.radiators[name].power * radiator.position / 100
+            self.heat_demand = self.total_power > config.power_required
                 
     def update(self):
         self.delete_stale_radiators()
@@ -70,14 +76,14 @@ class CentralHeating:
         with self.mutex:
             return self.heat_demand
             
-    def print_status(self):
+    def get_status(self) -> str:
         with self.mutex:
-            print("Radiator status:")
+            status = ["Radiator status:"]
             for _, radiator in self.radiators.items():
-                print("    ", end="")
-                print(radiator)
-            print(f"Heat demand: {'on' if self.heat_demand else 'off'}")
-            print()
+                status.append(f"    {radiator}")
+            status.append(f"Total power: {self.total_power:.0f}W")
+            status.append(f"Heat demand: {'on' if self.heat_demand else 'off'}")
+            return "\n".join(status)
 
     def get_dev_to_refresh(self):
         with self.mutex:

@@ -1,11 +1,14 @@
 
 import sys
 from central_heating_controller import CentralHeatingController
+from config import ConfigLoader
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python central_heating_controller.py <broker_address> <switch_name>")
         sys.exit(1)
+
+    ConfigLoader.load()
 
     broker_address = sys.argv[1]
     switch_name = sys.argv[2]
