@@ -12,6 +12,7 @@ class Radiator:
         self.setpoint = setpoint
         self.position = position
         self.last_updated = datetime.datetime.now()
+        self.FIX_PAYLOAD = json.dumps({"current_heating_setpoint": "20"}).encode('utf-8')
 
     def from_status(name, status) -> Optional['Radiator']:
         if not 'current_heating_setpoint' in status or not 'local_temperature' in status:
@@ -43,12 +44,15 @@ class CentralHeating:
         self.heat_demand : bool = False
         self.mutex = threading.RLock()
 
-    def update_radiator(self, radiator: Radiator):
+    def update_radiator(self, radiator: Radiator) -> bool:
+        if not self.check_radiator(radiator):
+            return False
+        if not radiator.name in ConfigLoader._config.radiators:
+            ConfigLoader._config.radiators[radiator.name] = RadiatorConfig()
+            ConfigLoader.save()
         with self.mutex:
-            if not radiator.name in ConfigLoader._config.radiators:
-                ConfigLoader._config.radiators[radiator.name] = RadiatorConfig()
-                ConfigLoader.save()
             self.radiators[radiator.name] = radiator
+        return True
 
     def delete_stale_radiators(self):
         stale_time = datetime.datetime.now() - datetime.timedelta(hours=self.RADIATOR_STALE_HOURS)
@@ -88,6 +92,11 @@ class CentralHeating:
     def get_dev_to_refresh(self):
         with self.mutex:
             return list(self.radiators.keys())
+        
+    def check_radiator(self, radiator: Radiator) -> bool:
+        if radiator.temperature < 5 or radiator.temperature > 35:
+            return False
+        return True
 
 class RadiatorSubscriberMqtt:
     def __init__(self, central_heating: CentralHeating):
@@ -106,4 +115,9 @@ class RadiatorSubscriberMqtt:
             return
         radiator = Radiator.from_status(name, status)
         if radiator:
-            self.central_heating.update_radiator(radiator)
+            if not self.central_heating.update_radiator(radiator):
+                print(f"Detected fault in radiator: {radiator.name}")
+                self.fix_radiator(client, radiator)
+
+    def fix_radiator(self, client, radiator: Radiator):
+        client.publish(f"zigbee2mqtt/{radiator.name}/set", radiator.FIX_PAYLOAD)
