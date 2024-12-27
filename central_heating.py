@@ -94,7 +94,7 @@ class CentralHeating:
             return list(self.radiators.keys())
         
     def check_radiator(self, radiator: Radiator) -> bool:
-        if radiator.temperature < 5 or radiator.temperature > 35:
+        if radiator.setpoint < 0 or radiator.setpoint > 30:
             return False
         return True
 
