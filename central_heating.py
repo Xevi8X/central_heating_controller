@@ -12,19 +12,23 @@ class Radiator:
         self.setpoint = setpoint
         self.position = position
         self.last_updated = datetime.datetime.now()
-        self.FIX_PAYLOAD = json.dumps({"current_heating_setpoint": "20"}).encode('utf-8')
+        self.FIX_PAYLOAD = json.dumps({"current_heating_setpoint": 20}).encode('utf-8')
 
     def from_status(name, status) -> Optional['Radiator']:
-        if not 'current_heating_setpoint' in status or not 'local_temperature' in status:
+        try:
+            if not 'current_heating_setpoint' in status or not 'local_temperature' in status:
+                return None
+            temperature = float(status['local_temperature'])
+            setpoint = float(status['current_heating_setpoint'])
+            if 'position' in status:
+                position = int(status['position'])
+            else:
+                error = setpoint - temperature
+                position = 100.0 * error / ConfigLoader._config.temperature_constant
+                position = int(min(100, max(0, position)))
+        except ValueError:
+            print(f"Error parsing radiator name: {name} status: {status}")
             return None
-        temperature = status['local_temperature']
-        setpoint = status['current_heating_setpoint']
-        if 'position' in status:
-            position = status['position']
-        else:
-            error = setpoint - temperature
-            position = 100 * error / ConfigLoader._config.temperature_constant
-            position = int(min(100, max(0, position)))
         return Radiator(name, temperature, setpoint, position)
     
     def __str__(self):
